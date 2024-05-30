@@ -7,6 +7,9 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
+// Set the desired timezone for the Node.js server
+//process.env.TZ = "UTC";
+
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
@@ -35,7 +38,7 @@ app.get("/expenses", (req, res) => {
 app.post("/expenses", (req, res) => {
   const { date, description1, description2, cost } = req.body;
   const query =
-    "INSERT INTO T_Expense (Date, Description1, Description2, Cost) VALUES (?, ?, ?, ?)";
+    "INSERT INTO T_Expense (date, description1, description2, cost) VALUES (?, ?, ?, ?)";
   db.query(query, [date, description1, description2, cost], (err, results) => {
     if (err) {
       return res.status(500).send(err);
