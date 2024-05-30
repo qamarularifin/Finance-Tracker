@@ -9,12 +9,13 @@ function App() {
     key: "date",
     direction: "ascending",
   });
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedCost, setSelectedCost] = useState("");
 
   useEffect(() => {
     axios
       .get("http://localhost:3001/expenses")
       .then((response) => {
-        console.log(response.data);
         setExpenses(response.data);
       })
       .catch((error) => {
@@ -22,8 +23,25 @@ function App() {
       });
   }, []);
 
+  const handleDateFilterChange = (event) => {
+    setSelectedDate(event.target.value);
+  };
+
+  const handleCostFilterChange = (event) => {
+    setSelectedCost(event.target.value);
+  };
+
+  const filteredExpenses = React.useMemo(() => {
+    return expenses.filter((expense) => {
+      const dateCondition = !selectedDate || expense.Date === selectedDate;
+      const costCondition =
+        !selectedCost || expense.Cost === parseFloat(selectedCost);
+      return dateCondition && costCondition;
+    });
+  }, [expenses, selectedDate, selectedCost]);
+
   const sortedExpenses = React.useMemo(() => {
-    let sortableExpenses = [...expenses];
+    let sortableExpenses = [...filteredExpenses];
     if (sortConfig !== null) {
       sortableExpenses.sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -36,7 +54,7 @@ function App() {
       });
     }
     return sortableExpenses;
-  }, [expenses, sortConfig]);
+  }, [filteredExpenses, sortConfig]);
 
   const requestSort = (key) => {
     let direction = "ascending";
@@ -57,6 +75,38 @@ function App() {
   return (
     <div className="App">
       <h1>Expense Tracker</h1>
+
+      <div>
+        <label>
+          Filter by Date:
+          <select onChange={handleDateFilterChange} value={selectedDate}>
+            <option value="">All</option>
+            {expenses
+              .map((expense) => expense.Date)
+              .filter((date, index, self) => self.indexOf(date) === index)
+              .map((date) => (
+                <option key={date} value={date}>
+                  {date}
+                </option>
+              ))}
+          </select>
+        </label>
+        <label>
+          Filter by Cost:
+          <select onChange={handleCostFilterChange} value={selectedCost}>
+            <option value="">All</option>
+            {expenses
+              .map((expense) => expense.Cost)
+              .filter((cost, index, self) => self.indexOf(cost) === index)
+              .map((cost) => (
+                <option key={cost} value={cost}>
+                  ${cost}
+                </option>
+              ))}
+          </select>
+        </label>
+      </div>
+
       <table border="1" style={{ borderCollapse: "collapse", width: "100%" }}>
         <thead>
           <tr>
@@ -93,6 +143,7 @@ function App() {
           ))}
         </tbody>
       </table>
+
       <Plot
         data={chartData}
         layout={{ width: 800, height: 400, title: "Expense Chart" }}
