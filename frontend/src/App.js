@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
 import Plot from "react-plotly.js";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 function App() {
   const [expenses, setExpenses] = useState([]);
@@ -9,8 +11,7 @@ function App() {
     key: "date",
     direction: "ascending",
   });
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedCost, setSelectedCost] = useState("");
+  const [selectedDate, setSelectedDate] = useState(null); // Update initial state to null
 
   useEffect(() => {
     axios
@@ -23,22 +24,17 @@ function App() {
       });
   }, []);
 
-  const handleDateFilterChange = (event) => {
-    setSelectedDate(event.target.value);
-  };
-
-  const handleCostFilterChange = (event) => {
-    setSelectedCost(event.target.value);
+  const handleDateFilterChange = (date) => {
+    setSelectedDate(date);
   };
 
   const filteredExpenses = React.useMemo(() => {
     return expenses.filter((expense) => {
-      const dateCondition = !selectedDate || expense.Date === selectedDate;
-      const costCondition =
-        !selectedCost || expense.Cost === parseFloat(selectedCost);
-      return dateCondition && costCondition;
+      return (
+        !selectedDate || expense.date === selectedDate.toISOString() // Update comparison to ISO string
+      );
     });
-  }, [expenses, selectedDate, selectedCost]);
+  }, [expenses, selectedDate]);
 
   const sortedExpenses = React.useMemo(() => {
     let sortableExpenses = [...filteredExpenses];
@@ -66,8 +62,8 @@ function App() {
 
   const chartData = [
     {
-      x: sortedExpenses.map((expense) => expense.Date),
-      y: sortedExpenses.map((expense) => expense.Cost),
+      x: sortedExpenses.map((expense) => expense.date),
+      y: sortedExpenses.map((expense) => expense.cost),
       type: "bar",
     },
   ];
@@ -79,31 +75,11 @@ function App() {
       <div>
         <label>
           Filter by Date:
-          <select onChange={handleDateFilterChange} value={selectedDate}>
-            <option value="">All</option>
-            {expenses
-              .map((expense) => expense.Date)
-              .filter((date, index, self) => self.indexOf(date) === index)
-              .map((date) => (
-                <option key={date} value={date}>
-                  {date}
-                </option>
-              ))}
-          </select>
-        </label>
-        <label>
-          Filter by Cost:
-          <select onChange={handleCostFilterChange} value={selectedCost}>
-            <option value="">All</option>
-            {expenses
-              .map((expense) => expense.Cost)
-              .filter((cost, index, self) => self.indexOf(cost) === index)
-              .map((cost) => (
-                <option key={cost} value={cost}>
-                  ${cost}
-                </option>
-              ))}
-          </select>
+          <DatePicker
+            selected={selectedDate}
+            onChange={handleDateFilterChange}
+            dateFormat="yyyy-MM-dd"
+          />
         </label>
       </div>
 
@@ -111,22 +87,22 @@ function App() {
         <thead>
           <tr>
             <th>
-              <button type="button" onClick={() => requestSort("Date")}>
+              <button type="button" onClick={() => requestSort("date")}>
                 Date
               </button>
             </th>
             <th>
-              <button type="button" onClick={() => requestSort("Description1")}>
+              <button type="button" onClick={() => requestSort("description1")}>
                 Description 1
               </button>
             </th>
             <th>
-              <button type="button" onClick={() => requestSort("Description2")}>
+              <button type="button" onClick={() => requestSort("description2")}>
                 Description 2
               </button>
             </th>
             <th>
-              <button type="button" onClick={() => requestSort("Cost")}>
+              <button type="button" onClick={() => requestSort("cost")}>
                 Cost
               </button>
             </th>
@@ -135,10 +111,10 @@ function App() {
         <tbody>
           {sortedExpenses.map((expense) => (
             <tr key={expense.ID}>
-              <td>{expense.Date}</td>
-              <td>{expense.Description1}</td>
-              <td>{expense.Description2}</td>
-              <td>${expense.Cost}</td>
+              <td>{new Date(expense.date).toLocaleDateString()}</td>
+              <td>{expense.description1}</td>
+              <td>{expense.description2}</td>
+              <td>${expense.cost}</td>
             </tr>
           ))}
         </tbody>
